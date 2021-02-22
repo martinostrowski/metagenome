@@ -9,7 +9,7 @@ The standardised assembly and annotation pipeline used to characterise shotgun m
 
 1. trimmomatic
 1. bbnorm (bbnorm.sh)
-3. SPAddes meta (spades.sh)
+3. SPAdes meta (spades.sh)
 4. rename reformat (500) (reformat.sh)
 5. prodigal (prodigal.sh)
 6. bbmap gene-level and contig-level (bbmap.sh)
