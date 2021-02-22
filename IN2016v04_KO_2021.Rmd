@@ -3,30 +3,17 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-
-
 load libraries
 ```{r}
 
 library(knitr)
-library(ALDEx2)
-library(CoDaSeq)
-library(zCompositions)
-library(igraph)
-library(car)
-library(grDevices)
-library(propr)
-
 library(vegan)
 library(ggrepel)
 library(randomcoloR)
-
-#install other packages
- library(tidyverse)
+library(tidyverse)
 library(ggridges)
 library(oce)
 library(scico)
-install.packages('hues')
 library(hues)
 ```
 
@@ -47,7 +34,7 @@ Datasets, in the form of separate gene abundance tables incorporating the taxono
 ### 01. Gene abundance section
 
 ```{r}
-setwd('/Volumes/Dropbox/MarineMicrobes Dropbox/Martin Ostrowski/IN2016v04data/')
+setwd('~/IN2016v04data/')
 
 
 bbmap.files<-list.files(pattern='gene.500.rpkm')
@@ -69,16 +56,10 @@ bbmap <- bbmap %>% separate(code_contig_gene, c('code', 'contig', 'gene'), sep='
 
 write_csv(bbmap, 'in2016v04_bbmap_gene_summary.csv')
 
-
-
 grpkms <- bbmap
 #grpkms<- read_csv('/Volumes/Dropbox/MarineMicrobes Dropbox/Martin Ostrowski//bbmap_gene_summaryv2.csv')
 
-
-
 ```
-
-
 ### 02. Taxonomy section
 ```{r}
 
@@ -89,18 +70,14 @@ basta.files.df<-as.data.frame(basta.files)
 basta.files.df <- separate(basta.files.df, 'basta.files', c('code'), sep='_', remove=F)
 basta.list <- lapply(basta.files.df$basta.files, function(x) read_tsv(x, col_names=c('contig_id', 'cLCA', 'cBHT')))
 
-
-
 names(basta.list) <- basta.files.df$code
 for (i in seq_along(basta.list)){
 basta.list[[i]] <- mutate(basta.list[[i]], 'code'= names(basta.list)[i])
 }
 
-
 for (i in seq_along(basta.list)){
 print(head(basta.list[[i]]))}
 basta <- bind_rows(basta.list)
-
 
 write_csv(basta, 'in2016_basta_summary.csv')
 
@@ -111,12 +88,8 @@ taxBHT<- select(tax, -cLCA)
 
 ```
 ### 03. KO section
-
 ```{r}
-
-
-
-setwd('/Volumes/Dropbox/MarineMicrobes Dropbox/Martin Ostrowski/IN2016v04data/')
+setwd('~/IN2016v04data/')
 
 ko.files<-list.files(pattern='.annotations$')
 ko.files.df<-as.data.frame(ko.files)
@@ -135,14 +108,14 @@ ko.list <- lapply(ko.files, function(x) read_tsv(x, col_names=c("code_contig_gen
 
 
 ko <- bind_rows(ko.list)
-mo <- read_tsv('~/db/MAI/2021-02-12_06-MAI-enrichm_annotate_output/MAI_module_paths.tsv')
-moC <- read_tsv('~/db/MAI/2021-02-12_06-MAI-enrichm_annotate_output/MAI_module_completeness.tsv')
+mo <- read_tsv('~/MAI_module_paths.tsv')
+moC <- read_tsv('~/MAI_module_completeness.tsv')
 
 ```
 ### 04. SEED section
 
 ```{r}
-seed <- read_tsv('~/db/MAI/MAI_allGenesSEEDhierarcy.tsv', col_names = c('code_contig_gene', NA,
+seed <- read_tsv('~/allGenesSEEDhierarcy.tsv', col_names = c('code_contig_gene', NA,
                                                                         'figID',
                                                                         'pct_identity',
                                                                         'aln_length','n_of_mismatches', 'gap_openings',
@@ -173,76 +146,24 @@ summary <- rpkms %>%
             rpkmM=mean(RPKM)) 
 
 
-ggplot(gsummary) + geom_bar(aes(as.factor(code), readsT), stat='identity') + coord_flip() + theme_bw()
+ggplot(gsummary) + 
+    geom_bar(aes(as.factor(code), readsT), stat='identity') + 
+    coord_flip() + theme_bw()
 ```
 
 ### 05. Joining and Overview Section
 summary <- mutate (summary, 'RPKM'= readsT / ( lengthT/1000 * readsT/1000000 ))
-
 
 ```{r}
 grpkms$code <- as.character(grpkms$code)
 
 grpkms<- select(grpkms, c(code_contig_gene, gReads, gLength, gBases))
 ```
-
-
 ### 06. SEED Section: NOT DONE YET - TBA
 
 skip to the quick vis section
 
-```{r}
-seedSub_coverageG <- seedSub_coverage %>%  select(-c(pid)) %>%   left_join(grpkms)
 
-summaryseed<-seedSub_coverage %>% group_by(code) %>% summarise(count=n()) #check that all metagenomes have been processed
-
-seedSub_coverageG <- seedSub %>% 
-  separate('code_contig_gene', c('code', 'contig','gene'), sep='_', remove=F) %>% 
-  unite('contig_id', c('code','contig'), sep='_', remove=F) #prepare `contig_id` to match the taxonomic assignment of contigs
-summaryBHT <- taxBHT %>% 
-  separate('contig_id', c('code', 'contig'), sep='_', remove=F) %>% 
-  group_by(code) %>% summarise(count=n())
-
-#colnames(seedSub_coverage)
-
-seedSub_coverage_widerLCA <- seedSub_coverageG %>%  
-  select(contig_id, figID, code, functions, lvl3, lvl2, lvl1, gReads, gFPKM) %>% 
-  left_join(taxLCA)
-
-seedSub_coverage_widerBHT <- seedSub_coverageG %>%  
-  select(contig_id, figID, code, functions, lvl3, lvl2, lvl1, gReads) %>% 
-  left_join(taxBHT)
-
-
-seedSub_coverage_widerPlca <- seedSub_coverage_widerLCA %>% 
-  filter(!is.na(cLCA)) %>%  
-  pivot_wider(c(cLCA,figID,functions,lvl1, lvl2, lvl3), names_from = code, values_from=gReads, values_fn=sum, values_fill=0)
-
-seedSub_coverage_widerPbht <- seedSub_coverage_widerBHT %>% 
-  filter(!is.na(cBHT)) %>%  
-  pivot_wider(c(cBHT,figID,functions,lvl1, lvl2, lvl3), names_from = code, values_from=gReads, values_fn=sum, values_fill=0)
-
-seedSub_coverage_widerP <- seedSub_coverage_widerP %>% 
-  separate(cLCA, c('Kingdom', 'Phylum', 'Order', 'Class', 'Family', 'Genus', 'Species'), sep=';', remove=F)
-
-seedSub_coverage_widerbhtP <- seedSub_coverage_widerPbht %>% 
-  separate(cBHT, c('Kingdom', 'Phylum', 'Order', 'Class', 'Family', 'Genus', 'Species'), sep=';', remove=F)
-
-seedSub_coverage_widerP <- seedSub_coverage_widerP %>% 
-  separate(cLCA, c('Kingdom', 'Phylum', 'Order', 'Class', 'Family', 'Genus', 'Species'), sep=';', remove=F)
-
-#seedSub_coverage_wider[is.na(seedSub_coverage_wider)] <- 0
-
-
-write_csv(seedSub_coverage_widerPbht, '/Volumes/Dropbox/MarineMicrobes Dropbox/MAI/MAI_SEED_profiles_taxBHT.csv')
-
-summary_bht <- seedSub_coverage_widerPbht %>% select(-c(lvl1,lvl2,lvl3, functions)) %>% 
-  pivot_longer(-c(figID,cBHT ), names_to = 'code', values_to='TotalReads') %>% 
-  group_by(cBHT,figID, code ) %>% 
-  summarise(totalreads=sum(TotalReads)) %>% 
-  ungroup() %>% 
-  arrange(desc(totalreads))
-```
 ###  07. The following section runs through some summary and visualisation steps to check the sanity of the data before generating the abundance table at the genus level
 
 ```{r, fig.width=7, fig.height=8}
@@ -460,7 +381,6 @@ ggplot(koMDSdf) + geom_point(aes(x=utc_date_sampled_yyyymmdd, color=depth_m, fil
 
 
 ```
-
 ### Hypthesis testing Section
 
 Below this line id codaseq centred log ratio code from Brown
@@ -527,17 +447,6 @@ taxonomy3[which (taxonomy3$ASVid.x == "Bd1001803"),]
 Gammaproteobacteria
 taxonomy3[which (taxonomy3$ASVid.x == "Bd1005467"),]
 Luminiphilus_sp000227505(RS_GCF_000227505.1)
-
-
-write_csv(kotable, 'MAI_eggnog_orthologue_abundance_table.csv')
-
-
-
-ggplot(summary_Level1) + geom_bar(aes(x=utc_date_sampled_yyyymmdd, y=totalavcov, fill=lvl1), stat='identity', position='fill') + theme_bw() +facet_grid(depth_m ~ .) + scale_fill_manual(values=mycolours.pal)
-
-
-
-
 
 ```
 
@@ -656,3 +565,56 @@ MAI_surface_spread <- pelB %>% filter(uniqcode %in% c('MAI')) %>% filter(depth_m
 
 ```
 
+### 06. The missing SEED section
+```{r}
+seedSub_coverageG <- seedSub_coverage %>%  select(-c(pid)) %>%   left_join(grpkms)
+
+summaryseed<-seedSub_coverage %>% group_by(code) %>% summarise(count=n()) #check that all metagenomes have been processed
+
+seedSub_coverageG <- seedSub %>% 
+  separate('code_contig_gene', c('code', 'contig','gene'), sep='_', remove=F) %>% 
+  unite('contig_id', c('code','contig'), sep='_', remove=F) #prepare `contig_id` to match the taxonomic assignment of contigs
+summaryBHT <- taxBHT %>% 
+  separate('contig_id', c('code', 'contig'), sep='_', remove=F) %>% 
+  group_by(code) %>% summarise(count=n())
+
+#colnames(seedSub_coverage)
+
+seedSub_coverage_widerLCA <- seedSub_coverageG %>%  
+  select(contig_id, figID, code, functions, lvl3, lvl2, lvl1, gReads, gFPKM) %>% 
+  left_join(taxLCA)
+
+seedSub_coverage_widerBHT <- seedSub_coverageG %>%  
+  select(contig_id, figID, code, functions, lvl3, lvl2, lvl1, gReads) %>% 
+  left_join(taxBHT)
+
+
+seedSub_coverage_widerPlca <- seedSub_coverage_widerLCA %>% 
+  filter(!is.na(cLCA)) %>%  
+  pivot_wider(c(cLCA,figID,functions,lvl1, lvl2, lvl3), names_from = code, values_from=gReads, values_fn=sum, values_fill=0)
+
+seedSub_coverage_widerPbht <- seedSub_coverage_widerBHT %>% 
+  filter(!is.na(cBHT)) %>%  
+  pivot_wider(c(cBHT,figID,functions,lvl1, lvl2, lvl3), names_from = code, values_from=gReads, values_fn=sum, values_fill=0)
+
+seedSub_coverage_widerP <- seedSub_coverage_widerP %>% 
+  separate(cLCA, c('Kingdom', 'Phylum', 'Order', 'Class', 'Family', 'Genus', 'Species'), sep=';', remove=F)
+
+seedSub_coverage_widerbhtP <- seedSub_coverage_widerPbht %>% 
+  separate(cBHT, c('Kingdom', 'Phylum', 'Order', 'Class', 'Family', 'Genus', 'Species'), sep=';', remove=F)
+
+seedSub_coverage_widerP <- seedSub_coverage_widerP %>% 
+  separate(cLCA, c('Kingdom', 'Phylum', 'Order', 'Class', 'Family', 'Genus', 'Species'), sep=';', remove=F)
+
+#seedSub_coverage_wider[is.na(seedSub_coverage_wider)] <- 0
+
+
+write_csv(seedSub_coverage_widerPbht, '/Volumes/Dropbox/MarineMicrobes Dropbox/MAI/MAI_SEED_profiles_taxBHT.csv')
+
+summary_bht <- seedSub_coverage_widerPbht %>% select(-c(lvl1,lvl2,lvl3, functions)) %>% 
+  pivot_longer(-c(figID,cBHT ), names_to = 'code', values_to='TotalReads') %>% 
+  group_by(cBHT,figID, code ) %>% 
+  summarise(totalreads=sum(TotalReads)) %>% 
+  ungroup() %>% 
+  arrange(desc(totalreads))
+  ```
