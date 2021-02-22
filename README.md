@@ -1,3 +1,74 @@
+
+
+
+This metagenome analysis workflow is in the process of being updated. For specific queries please contact martin.ostrowski@uts.edu.au
+
+The standardised assembly and annotation pipeline used to characterise shotgun metagenomes produced by the Marine Microbes and Australian Microbiome Project. 
+
+# The updated workflow consists of:
+
+1. trimmomatic
+1. bbnorm (bbnorm.sh)
+3. SPAddes meta (spades.sh)
+4. rename reformat (500) (reformat.sh)
+5. prodigal (prodigal.sh)
+6. bbmap gene-level and contig-level (bbmap.sh)
+7. basta (~/bln.sh then basta loop)
+8. eggnogmapper
+9. cd-hit 98 (optional)
+10. SEED mapping
+11. concatatentaion (compile_basta.r, bbmap.r)
+12. Overview statistics and visualisation
+13. Hypothesis testing
+14. Visualisation of results using pathways, modules and other functional hierarchies
+
+Each process is described in detail in a series of three R markdown notebooks. The main processing steps are coded for the UTS HPCC
+
+# The standardised outputs include
+
+a gene abundance table aggreagated on Taxonomy (Genus-level) and a. eggnog orthologous gene IDs
+                                                                 b. SEED figIDs
+                                                                 c. a contig abundance table
+
+The relative abundances of genes and/or contigs can be estimated in a number of ways (gene-wise, contig-wise and with or wi-thout taxonomic classification using raw data from the readmapping  carried out with bbmap)
+
+# Description:
+
+Steps 01 -08: to be imported
+
+8. eggNOG mapper
+
+split -l 1000000 -a 3 -d input_file.faa input_file.chunk_
+
+fasta format one sequence per line, split in to chunks
+
+# utility scripts
+# all in bin
+
+remove_smalls.pl
+
+# unwrap
+perl -ne 'chomp; if ( /^>/ ) { print "\n" if $n; print "$_\n"; $n++; } else { s/\s+//g; print; } END { print "\n"; }' MAI_all500.nt > MAI_all500unwrap.nt
+
+rename 1
+perl -ane 'if(/^>/){$a++;print ">139751_$a\n"}else{print;}'  /shared/c3/bio_db/BPA/assemblies/contigs/500/MAI/139751_contigs.nt >/shared/c3/bio_db/BPA/assemblies/contigs/500/MAI/139751_contigs.fasta ;
+rename 2
+
+
+for i in 35*vnt.out; do CODE=$(basename $i _contigs.vnt.out); basta sequence -p 51 -b 1 -d  /shared/c3/bio_db/BPA/nt202008/ /shared/c3/bio_db/BPA/assemblies/contigs/500/MAI/${CODE}_contigs.vnt.out ${CODE}_contigs.vnt$
+
+
+
+10. SEED
+
+SEED annotations were acquired by a diamond search of the predicted proteins against the SEED database with the hierarchy of functional categories were mapped wioth the aid of the subsystems R package <https://github$
+
+11. Initial ordination and clustering to check the data sanity was carried out with vegan::metaMDS on sqrt-transformed normalised read count data for the top 100,000+ gene profiles (by total abundance) followed by km$
+
+
+# old workflow below
+***
+
 # metagenome
 metagenome analysis workflow
 
