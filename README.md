@@ -3,21 +3,22 @@
 
 This metagenome analysis workflow is in the process of being updated. For specific queries please contact martin.ostrowski@uts.edu.au
 
-The standardised assembly and annotation pipeline used to characterise shotgun metagenomes produced by the Marine Microbes and Australian Microbiome Project. 
+An assembly and annotation pipeline using standardised tools to characterise shotgun metagenomes produced by the Marine Microbes and Australian Microbiome Project. 
 
 # The updated workflow consists of:
+(PBS scripts for HPCC)
 
-1. trimmomatic
-1. bbnorm (bbnorm.sh)
-3. SPAdes meta (spades.sh)
-4. rename reformat (500) (reformat.sh)
-5. prodigal (prodigal.sh)
-6. bbmap gene-level and contig-level (bbmap.sh)
-7. basta (~/bln.sh then basta loop)
-8. eggnogmapper
-9. cd-hit 98 (optional)
-10. SEED mapping
-11. concatatentaion (compile_basta.r, bbmap.r)
+1. Quality filtering and adapter trimming -Trimmomatic
+1. Digital dereplication - bbnorm (bbnorm.sh)
+3. Assembly -SPAdes meta (spades.sh)
+4. Naming conventions - rename reformat (500) (reformat.sh)
+5. Gene calling - prodigal (prodigal.sh)
+6. Abundance mapping -bbmap performed at gene-level and contig-level (bbmap.sh)
+7. Taxonomic assignment of contigs against the NCBI databasse - basta (~/bln.sh then basta loop)
+8. Functional annotation through fine-grained orthologue detection - eggnogmapper v1.0.2 (update to 2.0.8 pending)
+9. Reference Gene Catalogue -cd-hit 98 (optional)
+10. Subsystems annotation -SEED mapping
+11. Concatenation and table generation for input to statistical packages (compile_basta.r, bbmap.r)
 12. Overview statistics and visualisation
 13. Hypothesis testing
 14. Visualisation of results using pathways, modules and other functional hierarchies
@@ -33,8 +34,9 @@ a gene abundance table aggreagated on Taxonomy (Genus-level) and a. eggnog ortho
 The relative abundances of genes and/or contigs can be estimated in a number of ways (gene-wise, contig-wise and with or wi-thout taxonomic classification using raw data from the readmapping  carried out with bbmap)
 
 # Description:
+options for specific software packages and linking scripts
 
-Steps 01 -08: to be imported
+Steps 01 -08: to be imported *see old workflow below*
 
 8. eggNOG mapper
 
@@ -48,6 +50,9 @@ fasta format one sequence per line, split in to chunks
 remove_smalls.pl
 
 # unwrap
+
+Contig sequences are named consistently and the fasta files of predicted genes and proteins are converted to one entry per line to enable simple chunking and splitting operations.
+
 perl -ne 'chomp; if ( /^>/ ) { print "\n" if $n; print "$_\n"; $n++; } else { s/\s+//g; print; } END { print "\n"; }' MAI_all500.nt > MAI_all500unwrap.nt
 
 rename 1
